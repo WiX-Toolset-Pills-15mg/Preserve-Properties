@@ -1,0 +1,1 @@
+msiexec /i PreserveProperties.msi /l*vx install.log REMEMBER_ME=2

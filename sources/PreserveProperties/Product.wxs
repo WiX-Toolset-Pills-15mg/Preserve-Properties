@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+WiX Toolset Pills 15mg
+Copyright (C) 2019-2021 Dust in the Wind
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+    <!--
+    ====================================================================================================
+    START: Overview
+    ====================================================================================================
+    
+    This solution is inspired by the Rob Mensching's article:
+    https://robmensching.com/blog/posts/2010/5/2/the-wix-toolsets-remember-property-pattern/
+    
+    Our purpose is to preserve the property value provided in the install scenario and use it in the
+    repair, upgrade and uninstall scenarios without the need to be provided again.
+    
+    There are two aspects that must be taken care of:
+        1) On the install scenario, the property value must be stored in a registry key and, later,
+        read from there when the installer is executed for a repair, upgrade or uninstall scenario.
+    
+        2) If value is provided from the command line, the registry value must be ignored. The command
+        line value must be used instead.
+    
+    GOTO: PropertySaveComponents.wxs
+    -->
+
+    <Product
+        Id="*"
+        Name="Preserve Properties"
+        Language="1033"
+        Version="1.0.0.0"
+        Manufacturer="Dust in the Wind"
+        UpgradeCode="86713fbf-3196-4f22-9aa7-40bff96a68a3">
+
+        <Package
+            InstallerVersion="200"
+            Compressed="yes"
+            InstallScope="perMachine" />
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <MediaTemplate />
+
+        <!--
+        ====================================================================================================
+        Step 3: Read the property value from Windows Registry.
+        ====================================================================================================
+        
+        The value of the REMEMBER_ME property is populated with the value retrieved from Windows Registry.
+        
+        When the installer is first run, there is no value in the registry. The property will keep its
+        default value or the value provided from command line.
+        
+        When the installer is run a second time, for repair, upgrade or uninstall, there will be a value
+        in Windows Registry from the previous run, so the property will take that value. This means that
+        any value provided in command line will be overwritten.
+        (See the next step for a solution to this problem.)
+        
+        GOTO: Product.wxs
+        
+        -->
+
+        <Property Id="REMEMBER_ME" Value="1">
+            <RegistrySearch
+                Id="RememberProperty"
+                Root="HKLM"
+                Key="SOFTWARE\DustInTheWind\PreserveProperties"
+                Name="RememberMe"
+                Type="raw" />
+        </Property>
+
+        <Feature
+            Id="ProductFeature"
+            Title="Preserve Properties"
+            Level="1">
+
+            <!--
+            ====================================================================================================
+            Step 2: Add the component into the feature.
+            ====================================================================================================
+            
+            The component that stores the property value in Windows Registry must be added to a feature in order
+            to be executed.
+            
+            GOTO: Product.wxs
+            -->
+
+            <ComponentGroupRef Id="PropertySaveComponents" />
+            <ComponentGroupRef Id="FileComponents" />
+
+        </Feature>
+
+        <!--
+        ====================================================================================================
+        Step 4: Preserve the value provided in command line (if any)
+        ====================================================================================================
+        
+        The REMEMBER_ME property is populated with the value from Windows Registry by the AppSearch custom
+        action and this will overwrite any value provided from command line.
+        So, we will do the following steps:
+            - Preserve the value of the REMEMBER_ME property in a temporary property (Temp_REMEMBER_ME)
+              before being restored from Windows Registry. (before AppSearch)
+            - Let the AppSearch to restore the property value from Windows Registry.
+            - Restore the property value from the temporary property (that contains the command line value)
+              only if it really contains a value.
+        
+        In this way, the command line value take precedence, but, if non is provided, the Windows Registry
+        value is used. Further, if no value exists in Windows Registry, the property will remain with the
+        default value.
+        
+        Two custom actions are used for this:
+            - SaveRememberMeToTemp - is storing the REMEMBER_ME value in a temporary property.
+            - LoadRememberMeFromTemp - is restoring the REMEMBER_ME value from the temporary property only
+              if the temporary property contains a value.
+        
+        The custom actions are scheduled in both sequences: InstallUISequence and InstallExecuteSequence,
+        but they will be executed only the first time they are encountered.
+            - If the installer is executed normally, the custom actions are run in the client and the server will
+              skip them.
+            - If the installer is executed in silent mode, the client is not executed anymore, so the custom
+              actions will be executed by the server.
+        
+        GOTO: CustomActions.wxs
+        -->
+
+        <InstallUISequence>
+            <Custom Action="SaveRememberMeToTemp" Before="AppSearch" />
+            <Custom Action="LoadRememberMeFromTemp" After="AppSearch">
+                Temp_REMEMBER_ME
+            </Custom>
+        </InstallUISequence>
+
+        <InstallExecuteSequence>
+            <Custom Action="SaveRememberMeToTemp" Before="AppSearch" />
+            <Custom Action="LoadRememberMeFromTemp" After="AppSearch">
+                Temp_REMEMBER_ME
+            </Custom>
+        </InstallExecuteSequence>
+
+    </Product>
+
+</Wix>

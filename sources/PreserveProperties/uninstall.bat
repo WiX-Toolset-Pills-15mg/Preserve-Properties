@@ -1,0 +1,1 @@
+msiexec /x PreserveProperties.msi /l*vx uninstall.log
