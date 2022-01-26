@@ -18,28 +18,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<!--
+====================================================================================================
+START: Overview
+====================================================================================================
 
-    <!--
-    ====================================================================================================
-    START: Overview
-    ====================================================================================================
-    
-    This solution is inspired by the Rob Mensching's article:
-    https://robmensching.com/blog/posts/2010/5/2/the-wix-toolsets-remember-property-pattern/
-    
-    Our purpose is to preserve the property value provided in the install scenario and use it in the
-    repair, upgrade and uninstall scenarios without the need to be provided again.
-    
-    There are two aspects that must be taken care of:
-        1) On the install scenario, the property value must be stored in a registry key and, later,
-        read from there when the installer is executed for a repair, upgrade or uninstall scenario.
-    
-        2) If value is provided from the command line, the registry value must be ignored. The command
-        line value must be used instead.
-    
-    GOTO: PropertySaveComponents.wxs
-    -->
+This solution is inspired by the Rob Mensching's article:
+https://robmensching.com/blog/posts/2010/5/2/the-wix-toolsets-remember-property-pattern/
+
+Our purpose is to preserve the property value provided in the install scenario and use it in the
+repair, upgrade and uninstall scenarios without the need to be provided again.
+
+There are two aspects that must be taken care of:
+    1) On the install scenario, the property value must be stored in a registry key and, later,
+    read from there when the installer is executed for a repair, upgrade or uninstall scenario.
+
+    2) If value is provided from the command line, the registry value must be ignored. The command
+    line value must be used instead.
+
+NEXT: PropertySaveComponents.wxs
+-->
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
     <Product
         Id="*"
@@ -72,7 +72,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         any value provided in command line will be overwritten.
         (See the next step for a solution to this problem.)
         
-        GOTO: Product.wxs
+        NEXT: Product.wxs (DOWN)
         
         -->
 
@@ -98,7 +98,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             The component that stores the property value in Windows Registry must be added to a feature in order
             to be executed.
             
-            GOTO: Product.wxs
+            NEXT: Product.wxs (UP)
             -->
 
             <ComponentGroupRef Id="PropertySaveComponents" />
@@ -136,7 +136,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             - If the installer is executed in silent mode, the client is not executed anymore, so the custom
               actions will be executed by the server.
         
-        GOTO: CustomActions.wxs
+        NEXT: CustomActions.wxs
         -->
 
         <InstallUISequence>
