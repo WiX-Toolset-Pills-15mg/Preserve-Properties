@@ -30,7 +30,7 @@ The pill demonstrates how to preserve the initial values of the properties, prov
 
 ## Discussions and Suggestions
 
-[GitHub Discussions](discussions)
+[GitHub Discussions](https://github.com/WiX-Toolset-Pills-15mg/Preserve-Properties/discussions)
 
 Fill free to use the discussions page whenever needed:
 
