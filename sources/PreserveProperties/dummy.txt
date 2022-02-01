@@ -1,7 +1,7 @@
-WiX Toolset Pills - Preserve Properties
-==============================================================================
+WiX Toolset Pills 15mg - Preserve Properties
+====================================================================================================
 
-This file is part of the "Preserve Properties" Pill.
+This file is part of the "Preserve Properties" pill.
 
 The pill demonstrates how to preserve the initial values of the properties, provided at install time,
 in order to be used, later, for repair, upgrade or uninstall.
