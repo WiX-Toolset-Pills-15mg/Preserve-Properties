@@ -26,17 +26,24 @@ START: Overview
 This solution is inspired by the Rob Mensching's article:
 https://robmensching.com/blog/posts/2010/5/2/the-wix-toolsets-remember-property-pattern/
 
-Our purpose is to preserve the property value provided in the install scenario and use it in the
-repair, upgrade and uninstall scenarios without the need to be provided again.
+In this pill we'll show how to preserve a property's value provided in the install scenario and use
+it in other scenarios (repair, upgrade and uninstall), without the need to be provided again.
 
-There are two aspects that must be taken care of:
-    1) On the install scenario, the property value must be stored in a registry key and, later,
-    read from there when the installer is executed for a repair, upgrade or uninstall scenario.
+There are four steps that must be implemented:
 
-    2) If value is provided from the command line, the registry value must be ignored. The command
-    line value must be used instead.
+    a) At the end of the execution, the property's value must be stored somewhere in order to be
+       available later, on a subsequent run. We can store it, for example, in a Windows Registry
+       key.
+       
+    b) When the installer is executed again, the stored value must be retrieved from Windows
+       Registry and used.
+       
+    c) If a value is provided from the command line, it must take precedence over the one from
+       Windows Registry.
+       
+    d) If, after all these steps, the property is still empty, we may set a default value.
 
-NEXT: PropertySaveComponents.wxs
+NEXT: Product.wxs (DOWN)
 -->
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
@@ -59,82 +66,105 @@ NEXT: PropertySaveComponents.wxs
 
         <!--
         ====================================================================================================
-        Step 3: Read the property value from Windows Registry.
+        Step 1: Create the "REMEMBER_ME" property
         ====================================================================================================
         
-        The value of the REMEMBER_ME property is populated with the value retrieved from Windows Registry.
+        Let's create a property whose value must be remembered. We'll call it "REMEMBER_ME":
         
-        When the installer is first run, there is no value in the registry. The property will keep its
-        default value or the value provided from command line.
+        <Property Id="REMEMBER_ME" />
         
-        When the installer is run a second time, for repair, upgrade or uninstall, there will be a value
-        in Windows Registry from the previous run, so the property will take that value. This means that
-        any value provided in command line will be overwritten.
-        (See the next step for a solution to this problem.)
+        Note: This is not its final form. We'll come back later to enhance this property.
         
-        NEXT: Product.wxs (DOWN)
+        NEXT: PropertySaveComponents.wxs
         
         -->
 
-        <Property Id="REMEMBER_ME" Value="1">
+        <Property Id="REMEMBER_ME" Secure="yes">
+
+            <!--
+            ====================================================================================================
+            Step 4: Restore the property's value from Windows Registry.
+            ====================================================================================================
+            
+            The "<RegistrySearch>" element, will set the "REMEMBER_ME" property to the value retrieved from
+            Windows Registry.
+            
+            This is executed on any scenario (install, repair, upgrade, uninstall).
+            
+            Unfortunately, by introducing this mechanism, any value provided in command line will be
+            overwritten with the value from Windows Registry. The next step will present the fix for this
+            problem.
+            
+            NEXT: Product.wxs (DOWN)
+            
+            -->
+
             <RegistrySearch
                 Id="RememberProperty"
                 Root="HKLM"
                 Key="SOFTWARE\DustInTheWind\PreserveProperties"
                 Name="RememberMe"
                 Type="raw" />
+
         </Property>
+
+        <!--
+        ====================================================================================================
+        Step 7: Set a default value
+        ====================================================================================================
+        
+        If, after the "REMEMBER_ME" property was restored from Windows Registry, it is still empty, let's
+        set it to a default value of "1".
+        
+        NEXT: install-with-custom-value.bat
+        -->
+
+        <SetProperty
+            Id="REMEMBER_ME"
+            After="LoadRememberMeFromTemp"
+            Sequence="both"
+            Value="1">
+
+            <![CDATA[NOT REMEMBER_ME]]>
+        </SetProperty>
+
+        <!--
+        ====================================================================================================
+        Step 3: Add the component into the feature
+        ====================================================================================================
+        
+        The previously created component ("PropertySaveComponents") must be added into a feature in order to
+        be executed at install time.
+        
+        NEXT: Product.wxs (UP)
+        -->
 
         <Feature
             Id="ProductFeature"
             Title="Preserve Properties"
             Level="1">
 
-            <!--
-            ====================================================================================================
-            Step 2: Add the component into the feature.
-            ====================================================================================================
-            
-            The component that stores the property value in Windows Registry must be added to a feature in order
-            to be executed.
-            
-            NEXT: Product.wxs (UP)
-            -->
-
-            <ComponentGroupRef Id="PropertySaveComponents" />
             <ComponentGroupRef Id="FileComponents" />
+            <ComponentGroupRef Id="PropertySaveComponents" />
 
         </Feature>
 
         <!--
         ====================================================================================================
-        Step 4: Preserve the value provided in command line (if any)
+        Step 5: Preserve the value provided from command line (if any)
         ====================================================================================================
         
-        The REMEMBER_ME property is populated with the value from Windows Registry by the AppSearch custom
-        action and this will overwrite any value provided from command line.
-        So, we will do the following steps:
-            - Preserve the value of the REMEMBER_ME property in a temporary property (Temp_REMEMBER_ME)
-              before being restored from Windows Registry. (before AppSearch)
-            - Let the AppSearch to restore the property value from Windows Registry.
-            - Restore the property value from the temporary property (that contains the command line value)
-              only if it really contains a value.
+        Two custom actions are used in order to preserve the value provided from command line, if any, and
+        restore it after the property is set to the value from Windows Registry:
         
-        In this way, the command line value take precedence, but, if non is provided, the Windows Registry
-        value is used. Further, if no value exists in Windows Registry, the property will remain with the
-        default value.
+            - SaveRememberMeToTemp - is storing the REMEMBER_ME value in a temporary property
+              (Temp_REMEMBER_ME).
         
-        Two custom actions are used for this:
-            - SaveRememberMeToTemp - is storing the REMEMBER_ME value in a temporary property.
-            - LoadRememberMeFromTemp - is restoring the REMEMBER_ME value from the temporary property only
-              if the temporary property contains a value.
+            - LoadRememberMeFromTemp - is restoring the REMEMBER_ME value from the Temp_REMEMBER_ME
+              temporary property only if the temporary property contains a value.
         
         The custom actions are scheduled in both sequences: InstallUISequence and InstallExecuteSequence,
-        but they will be executed only the first time they are encountered.
-            - If the installer is executed normally, the custom actions are run in the client and the server will
-              skip them.
-            - If the installer is executed in silent mode, the client is not executed anymore, so the custom
-              actions will be executed by the server.
+        but they will be executed only the first time they are encountered. See next step.
         
         NEXT: CustomActions.wxs
         -->

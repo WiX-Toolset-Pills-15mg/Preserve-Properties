@@ -26,6 +26,7 @@
     <Compile Include="PropertySaveComponents.wxs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="install-with-custom-value.bat" />
     <Content Include="dummy.txt" />
     <Content Include="install.bat" />
     <Content Include="uninstall.bat" />

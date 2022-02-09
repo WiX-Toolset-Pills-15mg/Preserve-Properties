@@ -1,11 +1,10 @@
 :: ====================================================================================================
-:: Step 9: Uninstall the product
+:: Step 8: Run the installer
 :: ====================================================================================================
 ::
-:: Uninstall the MSI.
+:: Install the MSI with a custom value for the REMEBER_ME property.
 :: In the log file, at the end we can see all the properties displayed. REMEMBER_ME has the value 2.
-:: It was retrieved from Windows Registry.
 ::
-:: END
+:: uninstall.bat
 
-msiexec /x PreserveProperties.msi /l*vx uninstall.log
+msiexec /i PreserveProperties.msi /l*vx install-with-custom-value.log REMEMBER_ME=2

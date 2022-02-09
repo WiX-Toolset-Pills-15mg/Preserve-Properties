@@ -25,11 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
             <!--
             ====================================================================================================
-            Step 1: Save the value in Windows Registry
+            Step 2: Save the property's value into the Windows Registry
             ====================================================================================================
             
-            When the installer is run, for any scenario, it will add/update the registry value
-            with the current value of the property.
+            When the installer is run, it will save the property's value into the Windows Registry. This
+            component ensures that.
             
             NEXT: Product.wxs
             -->

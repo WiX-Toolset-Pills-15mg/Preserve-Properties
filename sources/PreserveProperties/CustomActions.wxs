@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         <!--
         ====================================================================================================
-        Step 5: Create the custom actions
+        Step 6: Create the custom actions
         ====================================================================================================
         
         These are the two custom actions that store and restore the value of the REMEMBER_ME property
@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         They must be added in both InstallUISequence and InstallExecuteSequence, but they will be executed
         only once. The first time they are encountered.
         
-        END
+        NEXT: Product.wxs
         -->
 
         <CustomAction
